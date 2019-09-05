@@ -1,5 +1,6 @@
 {
   "name": "frambo/hawkeye",
+  "type": "sdk",
   "require": {
     "php": ">=5.4"
   },
