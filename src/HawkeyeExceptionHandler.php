@@ -24,12 +24,14 @@ class HawkeyeExceptionHandler extends ExceptionHandler{
     public static function sendLogMessageToHawkeye(Exception $exception)
     {
         $config = config('hawkeye');
-        $message = "错误信息:".$exception->getMessage()."\n";
-        $message.= "错误文件:".$exception->getFile()."\n";
-        $message.= "错误行号:".$exception->getLine()."\n";
-        $token = self::auth($config['access_key'], $config['access_secret']);
-        if (!empty($token)) {
-            self::send($token, $config['monitoring_name'], $message);
+        if (!empty($config) && @env('APP_ENV') == 'production') {
+            $message = "错误信息:".$exception->getMessage()."\n";
+            $message.= "错误文件:".$exception->getFile()."\n";
+            $message.= "错误行号:".$exception->getLine()."\n";
+            $token = self::auth(@$config['access_key'], @$config['access_secret']);
+            if (!empty($token)) {
+                self::send($token, $config['monitoring_name'], $message);
+            }
         }
     }
 
@@ -42,14 +44,15 @@ class HawkeyeExceptionHandler extends ExceptionHandler{
     public static function auth($key, $secret)
     {
         $url = "http://zxxb-hawkeyes.mobby.cn/report/auth";
-        $postData = [
+        $paramData = [
             'access_key'    => $key,
             'access_secret' => $secret,
         ];
-        $res = self::curl_req($url, $postData);
+        $url = $url.'?'.http_build_query($paramData);
+        $res = self::curl_req($url);
         if (!empty($res)) {
-            $res = json_decode($res, true);
-            if ($res['code'] == 0) {
+            $res = json_decode(@$res, true);
+            if (@$res['code'] == 0) {
                 return $res['data'];
             }
         }
@@ -64,13 +67,16 @@ class HawkeyeExceptionHandler extends ExceptionHandler{
      */
     public static function send($token, $monitoringName, $notifyMsg)
     {
-        $url = "http://zxxb-hawkeyes.mobby.cn/report/up";
-        $postData = [
-            'token' => $token,
-            'monitoring_name' => $monitoringName,
-            'notify_msg' => $notifyMsg
-        ];
-        self::curl_req($url, $postData);
+        if (!empty($token)) {
+            $url = "http://zxxb-hawkeyes.mobby.cn/report/up";
+            $paramData = [
+                'token' => $token,
+                'monitor_name' => $monitoringName,
+                'notify_msg' => $notifyMsg
+            ];
+            $url = $url.'?'.http_build_query($paramData);
+            self::curl_req($url);
+        }
     }
 
     /**

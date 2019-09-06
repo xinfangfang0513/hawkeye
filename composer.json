@@ -8,5 +8,6 @@
     "psr-4": {
       "frambo\\hawkeye\\": "src"
     }
-  }
+  },
+  "version": "1.0.0"
 }
